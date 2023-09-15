@@ -31,9 +31,5 @@ def render_templated_string(template: str) -> str:
             template = template.replace(
                 var, escaped_var)
 
-            if os.path.exists(var):
-                args[escaped_var] = open(var, 'r').read()
-            else:
-                args[escaped_var] = ''
-
+            args[escaped_var] = open(var, 'r').read() if os.path.exists(var) else ''
     return chevron.render(template, args)

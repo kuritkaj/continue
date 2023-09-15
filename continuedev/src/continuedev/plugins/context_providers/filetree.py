@@ -12,10 +12,10 @@ def format_file_tree(startpath) -> str:
     for root, dirs, files in os.walk(startpath):
         level = root.replace(startpath, '').count(os.sep)
         indent = ' ' * 4 * (level)
-        result += '{}{}/'.format(indent, os.path.basename(root)) + "\n"
+        result += f'{indent}{os.path.basename(root)}/' + "\n"
         subindent = ' ' * 4 * (level + 1)
         for f in files:
-            result += '{}{}'.format(subindent, f) + "\n"
+            result += f'{subindent}{f}' + "\n"
 
     return result
 
@@ -43,7 +43,7 @@ class FileTreeContextProvider(ContextProvider):
         return [self._filetree_context_item()]
 
     async def get_item(self, id: ContextItemId, query: str) -> ContextItem:
-        if not id.item_id == self.title:
+        if id.item_id != self.title:
             raise Exception("Invalid item id")
 
         return self._filetree_context_item()

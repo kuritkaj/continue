@@ -66,13 +66,21 @@ def prune_chat_history(model_name: str, chat_history: List[ChatMessage], context
         i += 1
 
     # 2. Remove entire messages until the last 5
-    while len(chat_history) > 5 and total_tokens > context_length and len(chat_history) > 0:
+    while (
+        len(chat_history) > 5
+        and total_tokens > context_length
+        and chat_history
+    ):
         message = chat_history.pop(0)
         total_tokens -= count_tokens(model_name, message.content)
 
     # 3. Truncate message in the last 5, except last 1
     i = 0
-    while total_tokens > context_length and len(chat_history) > 0 and i < len(chat_history) - 1:
+    while (
+        total_tokens > context_length
+        and chat_history
+        and i < len(chat_history) - 1
+    ):
         message = chat_history[i]
         total_tokens -= count_tokens(model_name, message.content)
         total_tokens += count_tokens(model_name, message.summary)
@@ -85,7 +93,7 @@ def prune_chat_history(model_name: str, chat_history: List[ChatMessage], context
         total_tokens -= count_tokens(model_name, message.content)
 
     # 5. Truncate last message
-    if total_tokens > context_length and len(chat_history) > 0:
+    if total_tokens > context_length and chat_history:
         message = chat_history[0]
         message.content = prune_raw_prompt_from_top(
             model_name, context_length, message.content, tokens_for_completion)
@@ -139,7 +147,7 @@ def compile_chat_messages(model_name: str, msgs: Union[List[ChatMessage], None],
 
 
 def format_chat_messages(messages: List[ChatMessage]) -> str:
-    formatted = ""
-    for msg in messages:
-        formatted += f"<{msg['role'].capitalize()}>\n{msg['content']}\n\n"
-    return formatted
+    return "".join(
+        f"<{msg['role'].capitalize()}>\n{msg['content']}\n\n"
+        for msg in messages
+    )

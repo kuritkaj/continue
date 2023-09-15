@@ -32,7 +32,7 @@ class DiffContextProvider(ContextProvider):
         return [self.BASE_CONTEXT_ITEM]
 
     async def get_item(self, id: ContextItemId, query: str) -> ContextItem:
-        if not id.item_id == self.DIFF_CONTEXT_ITEM_ID:
+        if id.item_id != self.DIFF_CONTEXT_ITEM_ID:
             raise Exception("Invalid item id")
 
         diff = subprocess.check_output(

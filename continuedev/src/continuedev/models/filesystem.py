@@ -53,19 +53,19 @@ class RangeInFileWithContents(RangeInFile):
 
     @staticmethod
     def from_entire_file(filepath: str, content: str) -> "RangeInFileWithContents":
-        lines = content.splitlines()
-        if not lines:
+        if lines := content.splitlines():
+            return RangeInFileWithContents(
+                filepath=filepath,
+                range=Range.from_shorthand(
+                    0, 0, len(lines) - 1, len(lines[-1]) - 1),
+                contents=content
+            )
+        else:
             return RangeInFileWithContents(
                 filepath=filepath,
                 range=Range.from_shorthand(0, 0, 0, 0),
                 contents=""
             )
-        return RangeInFileWithContents(
-            filepath=filepath,
-            range=Range.from_shorthand(
-                0, 0, len(lines) - 1, len(lines[-1]) - 1),
-            contents=content
-        )
 
     @staticmethod
     def from_range_in_file(rif: RangeInFile, content: str) -> "RangeInFileWithContents":
@@ -128,7 +128,7 @@ class FileSystem(AbstractModel):
         raise NotImplementedError
 
     @classmethod
-    def read_range_in_str(self, s: str, r: Range) -> str:
+    def read_range_in_str(cls, s: str, r: Range) -> str:
         lines = s.split("\n")[r.start.line:r.end.line + 1]
         if len(lines) == 0:
             return ""
@@ -148,7 +148,7 @@ class FileSystem(AbstractModel):
         if s.endswith("\n"):
             lines.append("")
 
-        if len(lines) == 0:
+        if not lines:
             lines = [""]
 
         end = Position(line=edit.range.end.line,
@@ -160,8 +160,8 @@ class FileSystem(AbstractModel):
         before_lines = lines[:edit.range.start.line]
         after_lines = lines[end.line + 1:]
         between_str = lines[min(len(lines) - 1, edit.range.start.line)][:edit.range.start.character] + \
-            edit.replacement + \
-            lines[min(len(lines) - 1, end.line)][end.character + 1:]
+                edit.replacement + \
+                lines[min(len(lines) - 1, end.line)][end.character + 1:]
 
         new_range = Range(
             start=edit.range.start,
@@ -251,7 +251,7 @@ class FileSystem(AbstractModel):
             backward_edits.reverse()
             backward = SequentialFileSystemEdit(edits=backward_edits)
         else:
-            raise TypeError("Unknown FileSystemEdit type: " + str(type(edit)))
+            raise TypeError(f"Unknown FileSystemEdit type: {str(type(edit))}")
 
         return EditDiff(
             forward=edit,

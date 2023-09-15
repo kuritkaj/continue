@@ -47,7 +47,7 @@ class GoogleContextProvider(ContextProvider):
         return [self.BASE_CONTEXT_ITEM]
 
     async def get_item(self, id: ContextItemId, query: str, _) -> ContextItem:
-        if not id.item_id == self.GOOGLE_CONTEXT_ITEM_ID:
+        if id.item_id != self.GOOGLE_CONTEXT_ITEM_ID:
             raise Exception("Invalid item id")
 
         results = await self._google_search(query)

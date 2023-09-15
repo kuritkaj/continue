@@ -41,15 +41,16 @@ class WriteRegexPatternStep(Step):
     user_request: str
 
     async def run(self, sdk: ContinueSDK):
-        # Ask the user for a regex pattern
-        pattern = await sdk.models.medium.complete(dedent(f"""\
+        return await sdk.models.medium.complete(
+            dedent(
+                f"""\
             This is the user request:
 
             {self.user_request}
 
-            Please write either a regex pattern or just a string that be used with python's re module to find all matches requested by the user. It will be used as `re.findall(<PATTERN_YOU_WILL_WRITE>, file_content)`. Your output should be only the regex or string, nothing else:"""))
-
-        return pattern
+            Please write either a regex pattern or just a string that be used with python's re module to find all matches requested by the user. It will be used as `re.findall(<PATTERN_YOU_WILL_WRITE>, file_content)`. Your output should be only the regex or string, nothing else:"""
+            )
+        )
 
 
 class EditAllMatchesStep(Step):

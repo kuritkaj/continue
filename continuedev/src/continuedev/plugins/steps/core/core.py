@@ -286,9 +286,9 @@ class DefaultModelEditCodeStep(Step):
         return file_prefix, rif.contents, file_suffix, model_to_use, max_tokens
 
     def compile_prompt(self, file_prefix: str, contents: str, file_suffix: str, sdk: ContinueSDK) -> str:
-        if contents.strip() == "":
-            # Seperate prompt for insertion at the cursor, the other tends to cause it to repeat whole file
-            prompt = dedent(f"""\
+        if not contents.strip():
+            return dedent(
+                f"""\
 <file_prefix>
 {file_prefix}
 </file_prefix>
@@ -300,9 +300,8 @@ class DefaultModelEditCodeStep(Step):
 {self.user_input}
 </user_request>
 
-Please output the code to be inserted at the cursor in order to fulfill the user_request. Do NOT preface your answer or write anything other than code. You should not write any tags, just the code. Make sure to correctly indent the code:""")
-            return prompt
-
+Please output the code to be inserted at the cursor in order to fulfill the user_request. Do NOT preface your answer or write anything other than code. You should not write any tags, just the code. Make sure to correctly indent the code:"""
+            )
         prompt = self._prompt
         if file_prefix.strip() != "":
             prompt += dedent(f"""
@@ -401,10 +400,17 @@ Please output the code to be inserted at the cursor in order to fulfill the user
             # Highlight the line to show progress
             line_to_highlight = current_line_in_file - len(current_block_lines)
             if False:
-                await sdk.ide.highlightCode(RangeInFile(filepath=rif.filepath, range=Range.from_shorthand(
-                    line_to_highlight, 0, line_to_highlight, 0)), "#FFFFFF22" if len(current_block_lines) == 0 else "#00FF0022")
+                await sdk.ide.highlightCode(
+                    RangeInFile(
+                        filepath=rif.filepath,
+                        range=Range.from_shorthand(
+                            line_to_highlight, 0, line_to_highlight, 0
+                        ),
+                    ),
+                    "#FFFFFF22" if not current_block_lines else "#00FF0022",
+                )
 
-            if len(current_block_lines) == 0:
+            if not current_block_lines:
                 # Set this as the start of the next block
                 current_block_start = rif.range.start.line + len(original_lines) - len(
                     original_lines_below_previous_blocks) + offset_from_blocks
@@ -434,7 +440,13 @@ Please output the code to be inserted at the cursor in order to fulfill the user
                 # So here we will strip all matching lines from the end of current_block_lines
                 lines_stripped = []
                 index_of_last_line_in_block = first_valid_match[0]
-                while len(current_block_lines) > 0 and current_block_lines[-1] == original_lines_below_previous_blocks[index_of_last_line_in_block - 1]:
+                while (
+                    current_block_lines
+                    and current_block_lines[-1]
+                    == original_lines_below_previous_blocks[
+                        index_of_last_line_in_block - 1
+                    ]
+                ):
                     lines_stripped.append(current_block_lines.pop())
                     index_of_last_line_in_block -= 1
 
@@ -492,7 +504,7 @@ Please output the code to be inserted at the cursor in order to fulfill the user
         i = len(messages) - 1
         deleted = 0
         while i >= 0 and deleted < 2:
-            if messages[i].role == "user" or messages[i].role == "assistant":
+            if messages[i].role in ["user", "assistant"]:
                 messages.pop(i)
                 deleted += 1
             i -= 1
@@ -545,17 +557,22 @@ Please output the code to be inserted at the cursor in order to fulfill the user
                     # Lines that should signify the end of generation
                     if self.is_end_line(chunk_lines[i]):
                         break
-                    # Lines that should be ignored, like the <> tags
                     elif self.line_to_be_ignored(chunk_lines[i], completion_lines_covered == 0):
                         continue  # noice
-                    # Check if we are currently just copying the prefix
                     elif (lines_of_prefix_copied > 0 or completion_lines_covered == 0) and lines_of_prefix_copied < len(file_prefix.splitlines()) and chunk_lines[i] == full_file_contents_lines[lines_of_prefix_copied]:
                         # This is a sketchy way of stopping it from repeating the file_prefix. Is a bug if output happens to have a matching line
                         lines_of_prefix_copied += 1
                         continue  # also nice
-                    # Because really short lines might be expected to be repeated, this is only a !heuristic!
-                    # Stop when it starts copying the file_suffix
-                    elif chunk_lines[i].strip() == line_below_highlighted_range.strip() and len(chunk_lines[i].strip()) > 4 and not (len(original_lines_below_previous_blocks) > 0 and chunk_lines[i].strip() == original_lines_below_previous_blocks[0].strip()):
+                    elif (
+                        chunk_lines[i].strip()
+                        == line_below_highlighted_range.strip()
+                        and len(chunk_lines[i].strip()) > 4
+                        and (
+                            len(original_lines_below_previous_blocks) <= 0
+                            or chunk_lines[i].strip()
+                            != original_lines_below_previous_blocks[0].strip()
+                        )
+                    ):
                         repeating_file_suffix = True
                         break
 
@@ -582,7 +599,7 @@ Please output the code to be inserted at the cursor in order to fulfill the user
 
         if False:
             # If the current block isn't empty, add that suggestion
-            if len(current_block_lines) > 0:
+            if current_block_lines:
                 # We have a chance to back-track here for blank lines that are repeats of the end of the original
                 # Don't want to have the same ending in both the original and the generated, can just leave it there
                 num_to_remove = 0
@@ -629,10 +646,7 @@ Please output the code to be inserted at the cursor in order to fulfill the user
             rif_with_contents.append(
                 RangeInFileWithContents.from_range_in_file(range_in_file, file_contents))
 
-        rif_dict = {}
-        for rif in rif_with_contents:
-            rif_dict[rif.filepath] = rif.contents
-
+        rif_dict = {rif.filepath: rif.contents for rif in rif_with_contents}
         for rif in rif_with_contents:
             # If the file doesn't exist, ask them to save it first
             if not os.path.exists(rif.filepath):
@@ -653,7 +667,7 @@ class EditFileStep(Step):
     hide: bool = True
 
     async def describe(self, models: Models) -> Coroutine[str, None, None]:
-        return "Editing file: " + self.filepath
+        return f"Editing file: {self.filepath}"
 
     async def run(self, sdk: ContinueSDK) -> Coroutine[Observation, None, None]:
         file_contents = await sdk.ide.readFile(self.filepath)

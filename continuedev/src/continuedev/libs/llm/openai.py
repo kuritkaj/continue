@@ -81,25 +81,23 @@ class OpenAI(LLM):
         args.update(kwargs)
         args["stream"] = True
 
+        completion = ""
         if args["model"] in CHAT_MODELS:
             messages = compile_chat_messages(
                 args["model"], with_history, self.context_length, args["max_tokens"], prompt, functions=None, system_message=self.system_message)
             self.write_log(f"Prompt: \n\n{format_chat_messages(messages)}")
-            completion = ""
             async for chunk in await openai.ChatCompletion.acreate(
                 messages=messages,
                 **args,
             ):
-                if "content" in chunk.choices[0].delta:
-                    yield chunk.choices[0].delta.content
-                    completion += chunk.choices[0].delta.content
-                else:
+                if "content" not in chunk.choices[0].delta:
                     continue  # :)
 
+                yield chunk.choices[0].delta.content
+                completion += chunk.choices[0].delta.content
             self.write_log(f"Completion: \n\n{completion}")
         else:
             self.write_log(f"Prompt:\n\n{prompt}")
-            completion = ""
             async for chunk in await openai.Completion.acreate(prompt=prompt, **args):
                 yield chunk.choices[0].text
                 completion += chunk.choices[0].text

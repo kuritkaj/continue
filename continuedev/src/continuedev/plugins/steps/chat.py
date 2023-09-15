@@ -32,7 +32,21 @@ class SimpleChatStep(Step):
 
     async def run(self, sdk: ContinueSDK):
         # Check if proxy server API key
-        if isinstance(sdk.models.default, MaybeProxyOpenAI) and (sdk.models.default.api_key is None or sdk.models.default.api_key.strip() == "") and len(list(filter(lambda x: not x.step.hide, sdk.history.timeline))) >= 10 and len(list(filter(lambda x: x.step.name == FREE_USAGE_STEP_NAME, sdk.history.timeline))) == 0:
+        if (
+            isinstance(sdk.models.default, MaybeProxyOpenAI)
+            and (
+                sdk.models.default.api_key is None
+                or sdk.models.default.api_key.strip() == ""
+            )
+            and len(list(filter(lambda x: not x.step.hide, sdk.history.timeline)))
+            >= 10
+            and not list(
+                filter(
+                    lambda x: x.step.name == FREE_USAGE_STEP_NAME,
+                    sdk.history.timeline,
+                )
+            )
+        ):
             await sdk.run_step(MessageStep(
                 name=FREE_USAGE_STEP_NAME,
                 message=dedent("""\
@@ -138,7 +152,7 @@ class ViewDirectoryTreeStep(Step):
     description: str = "View the directory tree to learn which folder and files exist. You should always do this before adding new files."
 
     async def describe(self, models: Models) -> Coroutine[Any, Any, Coroutine[str, None, None]]:
-        return f"Viewed the directory tree."
+        return "Viewed the directory tree."
 
     async def run(self, sdk: ContinueSDK):
         self.description = f"```\n{display_tree(sdk.ide.workspace_directory, True, max_depth=2)}\n```"

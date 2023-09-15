@@ -127,13 +127,25 @@ class ContextManager:
         """
         Returns all of the selected ContextItems.
         """
-        return sum([await provider.get_selected_items() for provider in self.context_providers.values()], [])
+        return sum(
+            (
+                await provider.get_selected_items()
+                for provider in self.context_providers.values()
+            ),
+            [],
+        )
 
     async def get_chat_messages(self) -> List[ChatMessage]:
         """
         Returns chat messages from each provider.
         """
-        return sum([await provider.get_chat_messages() for provider in self.context_providers.values()], [])
+        return sum(
+            (
+                await provider.get_chat_messages()
+                for provider in self.context_providers.values()
+            ),
+            [],
+        )
 
     def __init__(self):
         self.context_providers = {}
@@ -153,7 +165,7 @@ class ContextManager:
             try:
 
                 health = await search_client.health()
-                if not health.status == "available":
+                if health.status != "available":
                     meilisearch_running = False
             except:
                 meilisearch_running = False
@@ -179,7 +191,7 @@ class ContextManager:
                 }
                 for item in context_items
             ]
-            if len(documents) > 0:
+            if documents:
                 try:
                     async with Client('http://localhost:7700') as search_client:
                         await asyncio.wait_for(search_client.index(SEARCH_INDEX_NAME).add_documents(documents), timeout=5)
