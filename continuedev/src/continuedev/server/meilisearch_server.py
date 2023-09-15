@@ -29,7 +29,7 @@ def ensure_meilisearch_installed() -> bool:
         else:
             non_existing_paths.add(path)
 
-    if len(non_existing_paths) > 0:
+    if non_existing_paths:
         # Clear the meilisearch binary
         if meilisearchPath in existing_paths:
             os.remove(meilisearchPath)
@@ -42,7 +42,11 @@ def ensure_meilisearch_installed() -> bool:
         # Download MeiliSearch
         logger.debug("Downloading MeiliSearch...")
         subprocess.run(
-            f"curl -L https://install.meilisearch.com | sh", shell=True, check=True, cwd=serverPath)
+            "curl -L https://install.meilisearch.com | sh",
+            shell=True,
+            check=True,
+            cwd=serverPath,
+        )
 
         return False
 
@@ -58,9 +62,7 @@ async def check_meilisearch_running() -> bool:
         async with Client('http://localhost:7700') as client:
             try:
                 resp = await client.health()
-                if resp["status"] != "available":
-                    return False
-                return True
+                return resp["status"] == "available"
             except:
                 return False
     except Exception:
@@ -73,7 +75,7 @@ async def start_meilisearch():
     """
 
     # Doesn't work on windows for now
-    if not os.name == "posix":
+    if os.name != "posix":
         return
 
     serverPath = getServerFolderPath()

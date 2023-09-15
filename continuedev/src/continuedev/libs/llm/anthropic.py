@@ -58,10 +58,14 @@ class AnthropicLLM(LLM):
         prompt = ""
 
         # Anthropic prompt must start with a Human turn
-        if len(messages) > 0 and messages[0]["role"] != "user" and messages[0]["role"] != "system":
+        if (
+            messages
+            and messages[0]["role"] != "user"
+            and messages[0]["role"] != "system"
+        ):
             prompt += f"{HUMAN_PROMPT} Hello."
         for msg in messages:
-            prompt += f"{HUMAN_PROMPT if (msg['role'] == 'user' or msg['role'] == 'system') else AI_PROMPT} {msg['content']} "
+            prompt += f"{HUMAN_PROMPT if msg['role'] in ['user', 'system'] else AI_PROMPT} {msg['content']} "
 
         prompt += AI_PROMPT
         return prompt

@@ -61,7 +61,9 @@ class SetupPipelineStep(Step):
         time.sleep(1)
 
         # wait for user to put API key in secrets.toml
-        await sdk.ide.setFileOpen(await sdk.ide.getWorkspaceDirectory() + "/.dlt/secrets.toml")
+        await sdk.ide.setFileOpen(
+            await f"{sdk.ide.getWorkspaceDirectory()}/.dlt/secrets.toml"
+        )
         await sdk.wait_for_user_confirmation("If this service requires an API key, please add it to the `secrets.toml` file and then press `Continue`.")
 
         sdk.context.set("source_name", source_name)

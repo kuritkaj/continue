@@ -30,9 +30,7 @@ class TextObservation(Observation):
 
     @validator("text", pre=True, always=True)
     def text_not_none(cls, v):
-        if v is None:
-            return ""
-        return v
+        return "" if v is None else v
 
 
 class InternalErrorObservation(Observation):

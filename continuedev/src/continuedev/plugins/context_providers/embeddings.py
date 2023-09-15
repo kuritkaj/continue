@@ -65,7 +65,7 @@ class EmbeddingsProvider(ContextProvider):
         return [self.BASE_CONTEXT_ITEM]
 
     async def add_context_item(self, id: ContextItemId, query: str):
-        if not id.item_id == self.EMBEDDINGS_CONTEXT_ITEM_ID:
+        if id.item_id != self.EMBEDDINGS_CONTEXT_ITEM_ID:
             raise Exception("Invalid item id")
 
         results = await self._get_query_results(query)
