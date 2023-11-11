@@ -243,7 +243,7 @@
   "dependencies": {
     "@electron/rebuild": "^3.2.10",
     "@reduxjs/toolkit": "^1.9.3",
-    "axios": "^1.2.5",
+    "axios": "^1.6.0",
     "downshift": "^7.6.0",
     "fkill": "^8.1.0",
     "highlight.js": "^11.7.0",
